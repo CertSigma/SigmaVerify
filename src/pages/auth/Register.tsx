@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link, useNavigate } from 'react-router-dom'
-import { Shield, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -41,6 +41,7 @@ export default function Register() {
           company_name: data.company_name,
           role: 'hr',
         },
+        emailRedirectTo: `${window.location.origin}/auth/login`,
       },
     })
 
@@ -57,11 +58,9 @@ export default function Register() {
     <div className="min-h-screen bg-gradient-to-br from-[#063840] to-[#0a5060] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#6FC2CB]/20 rounded-2xl mb-4">
-            <Shield className="w-7 h-7 text-[#6FC2CB]" />
-          </div>
+          <img src="/relynt_logo.svg" alt="Relynt" className="w-14 h-14 rounded-2xl mb-4" />
           <h1 className="text-2xl font-bold text-white">Create your account</h1>
-          <p className="text-[#6FC2CB]/80 mt-1 text-sm">Start verifying employees with CertVerify</p>
+          <p className="text-[#6FC2CB]/80 mt-1 text-sm">Start verifying employees with relynt</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">

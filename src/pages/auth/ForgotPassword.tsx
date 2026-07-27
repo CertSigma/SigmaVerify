@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Link } from 'react-router-dom'
-import { Shield, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
@@ -37,9 +37,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-gradient-to-br from-[#063840] to-[#0a5060] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#6FC2CB]/20 rounded-2xl mb-4">
-            <Shield className="w-7 h-7 text-[#6FC2CB]" />
-          </div>
+          <img src="/relynt_logo.svg" alt="Relynt" className="w-14 h-14 rounded-2xl mb-4" />
           <h1 className="text-2xl font-bold text-white">Reset password</h1>
           <p className="text-[#6FC2CB]/80 mt-1 text-sm">We'll send you a reset link</p>
         </div>

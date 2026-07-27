@@ -178,7 +178,7 @@ export default function UserManagement() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Approve account?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  This will give <strong>{profile.full_name}</strong> full access to CertVerify.
+                                  This will give <strong>{profile.full_name}</strong> full access to relynt.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

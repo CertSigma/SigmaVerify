@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, FileText, ClipboardCheck,
-  LogOut, Shield, ChevronRight
+  LogOut, Shield, ChevronRight, Building2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -17,10 +17,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/hr/dashboard', icon: LayoutDashboard, label: 'Dashboard', roles: ['hr'] },
   { to: '/hr/employees', icon: Users, label: 'Employees', roles: ['hr'] },
-  { to: '/bgv/queue', icon: ClipboardCheck, label: 'Review Queue', roles: ['bgv_team'] },
+  { to: '/bgv/queue', icon: ClipboardCheck, label: 'Review Queue', roles: ['bgv_team', 'admin'] },
   { to: '/admin', icon: Shield, label: 'Admin Panel', roles: ['admin'] },
+  { to: '/admin/orgs', icon: Building2, label: 'Orgs', roles: ['admin'] },
   { to: '/admin/users', icon: Users, label: 'Users', roles: ['admin'] },
   { to: '/admin/reports', icon: FileText, label: 'Reports', roles: ['admin'] },
+  { to: '/admin/employees', icon: Users, label: 'All Employees', roles: ['admin'] },
 ]
 
 export function Sidebar() {
@@ -35,11 +37,9 @@ export function Sidebar() {
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-[#6FC2CB] rounded-lg flex items-center justify-center">
-            <Shield className="w-4 h-4 text-[#063840]" />
-          </div>
+          <img src="/relynt_logo.svg" alt="Relynt" className="w-8 h-8 rounded-lg" />
           <div>
-            <div className="text-white font-bold text-lg leading-none">CertVerify</div>
+            <div className="text-white font-bold text-lg leading-none">relynt</div>
             <div className="text-[#6FC2CB] text-xs font-medium mt-0.5">BGV Platform</div>
           </div>
         </div>

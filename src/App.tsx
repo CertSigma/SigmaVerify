@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'sonner'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
-import { Shield, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 const Login = lazy(() => import('./pages/auth/Login'))
 const Register = lazy(() => import('./pages/auth/Register'))
@@ -16,6 +16,9 @@ const ReviewQueue = lazy(() => import('./pages/bgv/ReviewQueue'))
 const EmployeeReview = lazy(() => import('./pages/bgv/EmployeeReview'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
+const Organizations = lazy(() => import('./pages/admin/Organizations'))
+const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
+const AllEmployees = lazy(() => import('./pages/admin/AllEmployees'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +43,7 @@ function PendingApproval() {
     <div className="min-h-screen bg-gradient-to-br from-[#063840] to-[#0a5060] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
         <div className="w-14 h-14 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Shield className="w-7 h-7 text-yellow-600" />
+          <img src="/relynt_logo.svg" alt="Relynt" className="w-7 h-7" />
         </div>
         <h1 className="text-xl font-bold mb-2">Awaiting Approval</h1>
         <p className="text-sm text-muted-foreground">
@@ -117,13 +120,16 @@ function AppRoutes() {
         <Route path="/hr/employees/add" element={<ProtectedRoute roles={['hr']}><AddEmployee /></ProtectedRoute>} />
         <Route path="/hr/employees/:id" element={<ProtectedRoute roles={['hr']}><EmployeeDetail /></ProtectedRoute>} />
 
-        {/* BGV team routes */}
-        <Route path="/bgv/queue" element={<ProtectedRoute roles={['bgv_team']}><ReviewQueue /></ProtectedRoute>} />
-        <Route path="/bgv/review/:id" element={<ProtectedRoute roles={['bgv_team']}><EmployeeReview /></ProtectedRoute>} />
+        {/* BGV team + Admin routes */}
+        <Route path="/bgv/queue" element={<ProtectedRoute roles={['bgv_team', 'admin']}><ReviewQueue /></ProtectedRoute>} />
+        <Route path="/bgv/review/:id" element={<ProtectedRoute roles={['bgv_team', 'admin']}><EmployeeReview /></ProtectedRoute>} />
 
         {/* Admin routes */}
         <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/orgs" element={<ProtectedRoute roles={['admin']}><Organizations /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><UserManagement /></ProtectedRoute>} />
+        <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><ReportsPage /></ProtectedRoute>} />
+        <Route path="/admin/employees" element={<ProtectedRoute roles={['admin']}><AllEmployees /></ProtectedRoute>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

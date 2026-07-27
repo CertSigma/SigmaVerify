@@ -49,8 +49,8 @@ export default function EmployeeDetail() {
 
   const progress = data
     ? Math.round(
-        (data.verifications.filter(v => v.status === 'verified' || v.status === 'failed').length / 5) * 100
-      )
+      (data.verifications.filter(v => v.status === 'verified' || v.status === 'failed').length / 5) * 100
+    )
     : 0
 
   if (isLoading) {

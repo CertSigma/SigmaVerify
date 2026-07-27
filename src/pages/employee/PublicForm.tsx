@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { CheckCircle2, Shield, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react'
+import { CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { DocumentUploader } from '@/components/forms/DocumentUploader'
 import { Button } from '@/components/ui/button'
@@ -142,7 +142,7 @@ export default function PublicForm() {
       <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm border border-border p-8 max-w-md w-full text-center">
           <div className="w-14 h-14 bg-red-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-7 h-7 text-red-500" />
+            <img src="/relynt_logo.svg" alt="Relynt" className="w-7 h-7" />
           </div>
           <h1 className="text-lg font-semibold text-foreground mb-2">Invalid Link</h1>
           <p className="text-sm text-muted-foreground">{error}</p>
@@ -177,12 +177,10 @@ export default function PublicForm() {
       {/* Header */}
       <div className="bg-[#063840] text-white py-5 px-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#6FC2CB] rounded-lg flex items-center justify-center">
-            <Shield className="w-4 h-4 text-[#063840]" />
-          </div>
+          <img src="/relynt_logo.svg" alt="Relynt" className="w-8 h-8 rounded-lg" />
           <div>
             <div className="font-semibold text-base">Background Verification</div>
-            <div className="text-[#6FC2CB]/80 text-xs">Secure · Confidential · CertVerify</div>
+            <div className="text-[#6FC2CB]/80 text-xs">Secure · Confidential · relynt</div>
           </div>
         </div>
       </div>

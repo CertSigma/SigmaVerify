@@ -21,7 +21,7 @@ serve(async (req) => {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Background Verification - CertVerify</title>
+  <title>Background Verification - relynt</title>
 </head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:Inter,system-ui,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;padding:40px 20px;">
@@ -34,7 +34,7 @@ serve(async (req) => {
               <table width="100%">
                 <tr>
                   <td>
-                    <div style="color:#6FC2CB;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">CertVerify</div>
+                    <div style="color:#6FC2CB;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">relynt</div>
                     <div style="color:#ffffff;font-size:22px;font-weight:700;">Background Verification</div>
                   </td>
                 </tr>
@@ -74,7 +74,7 @@ serve(async (req) => {
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;">
               <p style="color:#94a3b8;font-size:12px;margin:0;text-align:center;">
-                Powered by <strong style="color:#063840;">CertVerify</strong> · Secure Background Verification
+                Powered by <strong style="color:#063840;">relynt</strong> · Secure Background Verification
               </p>
             </td>
           </tr>
@@ -92,7 +92,7 @@ serve(async (req) => {
         Authorization: `Bearer ${Deno.env.get('RESEND_API_KEY')}`,
       },
       body: JSON.stringify({
-        from: 'CertVerify <shak@certsigma.com>',
+        from: 'relynt <shak@certsigma.com>',
         to: employeeEmail,
         subject: `Complete your background verification — ${companyName}`,
         html,
