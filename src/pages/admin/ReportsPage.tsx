@@ -130,7 +130,8 @@ export default function ReportsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={async () => {
-                                const url = await getSignedUrl('reports', report.report_url)
+                                const reportUrl = report.report_url!
+                                const url = await getSignedUrl('reports', reportUrl)
                                 if (url) window.open(url, '_blank')
                               }}
                             >
@@ -141,7 +142,8 @@ export default function ReportsPage() {
                               variant="ghost"
                               size="sm"
                               onClick={async () => {
-                                const url = await getSignedUrl('reports', report.report_url)
+                                const reportUrl = report.report_url!
+                                const url = await getSignedUrl('reports', reportUrl)
                                 if (url) window.open(url, '_blank')
                               }}
                             >
