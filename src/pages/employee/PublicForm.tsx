@@ -81,6 +81,11 @@ export default function PublicForm() {
     setUploading(true)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        await supabase.auth.signInAnonymously()
+      }
+
       const uploadedDocs: { doc_type: DocType; file_path: string }[] = []
 
       for (const step of STEPS) {
