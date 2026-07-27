@@ -69,11 +69,15 @@ export default function PublicForm() {
   const uploadFile = async (file: File, employeeId: string, docType: DocType): Promise<string> => {
     const ext = file.name.split('.').pop()
     const path = `${employeeId}/${docType}.${ext}`
-    const { error } = await supabase.storage
-      .from('employee-docs')
-      .upload(path, file, { upsert: true })
+
+    const buffer = await file.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+
+    const { data, error } = await supabase.functions.invoke('upload-document', {
+      body: { filePath: path, fileBase64: base64, contentType: file.type },
+    })
     if (error) throw error
-    return path
+    return data.path
   }
 
   const handleSubmit = async () => {
