@@ -155,40 +155,45 @@ export default function EmployeeReview() {
       }
 
       const finalStatus = verdict === 'CLEAR' ? 'completed' : 'failed'
-      await supabase.from('employees').update({
-        status: finalStatus,
-        completed_at: new Date().toISOString(),
-      }).eq('id', id!)
+
+      if (!isRegenerate) {
+        await supabase.from('employees').update({
+          status: finalStatus,
+          completed_at: new Date().toISOString(),
+        }).eq('id', id!)
+      }
 
       const reportUrl = await getSignedUrl('reports', path, 86400)
 
-      const { data: hrData } = await supabase
-        .from('employees')
-        .select('hr_id, profiles:hr_id(full_name, email)')
-        .eq('id', id!)
-        .single()
+      if (!isRegenerate) {
+        const { data: hrData } = await supabase
+          .from('employees')
+          .select('hr_id, profiles:hr_id(full_name, email)')
+          .eq('id', id!)
+          .single()
 
-      if (hrData && reportUrl) {
-        const hrProfile = (hrData as Record<string, unknown>).profiles as { full_name: string; email: string } | null
-        if (hrProfile) {
-          await invokeFunction('send-bgv-complete', {
-            hrEmail: hrProfile.email,
-            hrName: hrProfile.full_name,
-            employeeName: data.employee.full_name,
-            employeeEmail: data.employee.email,
-            verdict,
-            reportUrl,
-            appUrl: window.location.origin,
-          })
+        if (hrData && reportUrl) {
+          const hrProfile = (hrData as Record<string, unknown>).profiles as { full_name: string; email: string } | null
+          if (hrProfile) {
+            await invokeFunction('send-bgv-complete', {
+              hrEmail: hrProfile.email,
+              hrName: hrProfile.full_name,
+              employeeName: data.employee.full_name,
+              employeeEmail: data.employee.email,
+              verdict,
+              reportUrl,
+              appUrl: window.location.origin,
+            })
 
-          await supabase.from('reports').update({
-            sent_to_hr_at: new Date().toISOString(),
-            sent_to_employee_at: new Date().toISOString(),
-          }).eq('employee_id', id!)
+            await supabase.from('reports').update({
+              sent_to_hr_at: new Date().toISOString(),
+              sent_to_employee_at: new Date().toISOString(),
+            }).eq('employee_id', id!)
+          }
         }
       }
 
-      toast.success('Report generated and emails sent')
+      toast.success(isRegenerate ? 'Report regenerated successfully' : 'Report generated and emails sent')
       queryClient.invalidateQueries({ queryKey: ['bgv-review', id] })
       queryClient.invalidateQueries({ queryKey: ['bgv-queue'] })
     } catch (err) {
@@ -203,6 +208,7 @@ export default function EmployeeReview() {
     const s = localVerifs[dt]?.status
     return s === 'verified' || s === 'failed'
   })
+  const isRegenerate = data?.employee?.status === 'completed' || data?.employee?.status === 'failed'
 
   if (isLoading) {
     return (
@@ -261,7 +267,7 @@ export default function EmployeeReview() {
                   <Save className="w-3.5 h-3.5 mr-1.5" />
                   Save Progress
                 </Button>
-                {allResolved && employee.status !== 'completed' && employee.status !== 'failed' && (
+                {allResolved && (!isRegenerate || profile?.role === 'admin') && (
                   <Button
                     size="sm"
                     variant="success"
@@ -269,7 +275,7 @@ export default function EmployeeReview() {
                     loading={generatingReport}
                   >
                     <FileText className="w-3.5 h-3.5 mr-1.5" />
-                    Generate Report
+                    {isRegenerate ? 'Regenerate Report' : 'Generate Report'}
                   </Button>
                 )}
               </div>
