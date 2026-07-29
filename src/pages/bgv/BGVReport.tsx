@@ -2,11 +2,14 @@ import { Document, Page, Text, View, Image, Link, StyleSheet } from '@react-pdf/
 import { DOC_TYPE_LABELS } from '@/lib/types'
 import type { Employee, DocType, VerificationStatus } from '@/lib/types'
 
+const logoSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjY1IiBoZWlnaHQ9IjI2NSIgdmlld0JveD0iMCAwIDI2NSAyNjUiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNjUiIGhlaWdodD0iMjY1IiByeD0iMzUiIGZpbGw9IiM0REM1Q0QiLz4KPHBhdGggZD0iTTEzMC4zMzYgMTMzSDgyLjc5OTRDNzguODE0NyAxMzMgNzYuNDMxIDEzNy40MzMgNzguNjI4NSAxNDAuNzU3TDEzMS41MTcgMjIwLjc1N0MxMzIuNDQzIDIyMi4xNTggMTM0LjAxIDIyMyAxMzUuNjg4IDIyM0gxODQuMTE0QzE4OC4xMTYgMjIzIDE5MC40OTcgMjE4LjUzMiAxODguMjY0IDIxNS4yMTFMMTM0LjQ4NiAxMzUuMjExQzEzMy41NTcgMTMzLjgyOSAxMzIuMDAxIDEzMyAxMzAuMzM2IDEzM1oiIGZpbGw9IiMwMDM5NDEiLz4KPHBhdGggZD0iTTE0Ny41IDEzM0MxNzIuOTA1IDEzMyAxOTMuNSAxMTIuNDA1IDE5My41IDg3QzE5My41IDYxLjU5NDkgMTcyLjkwNSA0MSAxNDcuNSA0MUg4Mi4xODgzQzc4LjIyNjIgNDEgNzUuODM4MiA0NS4zODg0IDc3Ljk4OTggNDguNzE1M0wxMzEuMDIyIDEzMC43MTVDMTMxLjk0NCAxMzIuMTQgMTMzLjUyNCAxMzMgMTM1LjIyMSAxMzNIMTQ3LjVaIiBmaWxsPSIjMDAzOTQxIi8+Cjwvc3ZnPgo='
+
 const styles = StyleSheet.create({
   page: { padding: 40, fontFamily: 'Helvetica', backgroundColor: '#ffffff' },
   header: { backgroundColor: '#063840', padding: 24, marginBottom: 24, borderRadius: 8 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   logo: { color: '#6FC2CB', fontSize: 18, fontFamily: 'Helvetica-Bold' },
+  logoImage: { width: 22, height: 22, marginRight: 8 },
   tagline: { color: '#6FC2CB', fontSize: 8, marginTop: 2 },
   reportTitle: { color: '#ffffff', fontSize: 14, fontFamily: 'Helvetica-Bold', marginTop: 16 },
   section: { marginBottom: 20 },
@@ -72,9 +75,12 @@ export function BGVReport({ employee, verifications, documents, verifiedBy, verd
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <View>
-              <Text style={styles.logo}>relynt</Text>
-              <Text style={styles.tagline}>Secure Background Verification Platform</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Image src={logoSrc} style={styles.logoImage} />
+              <View>
+                <Text style={styles.logo}>relynt</Text>
+                <Text style={styles.tagline}>Secure Background Verification Platform</Text>
+              </View>
             </View>
             <View>
               <Text style={{ color: '#6FC2CB', fontSize: 9 }}>Report Date</Text>
