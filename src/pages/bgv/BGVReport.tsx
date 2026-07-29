@@ -1,4 +1,4 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, Link, StyleSheet } from '@react-pdf/renderer'
 import { DOC_TYPE_LABELS } from '@/lib/types'
 import type { Employee, DocType, VerificationStatus } from '@/lib/types'
 
@@ -26,6 +26,10 @@ const styles = StyleSheet.create({
   verdictSub: { fontSize: 9, textAlign: 'center', marginTop: 4 },
   footer: { position: 'absolute', bottom: 30, left: 40, right: 40 },
   footerText: { fontSize: 8, color: '#94a3b8', textAlign: 'center' },
+  docImage: { width: '100%', height: 140, objectFit: 'contain', borderRadius: 4, marginBottom: 4 },
+  docLink: { fontSize: 8, color: '#2563eb', textDecoration: 'underline', textAlign: 'center' },
+  docCard: { width: '30%', marginBottom: 12 },
+  docRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
 })
 
 const statusColors: Record<VerificationStatus, string> = {
@@ -41,15 +45,22 @@ interface ReportVerification {
   notes: string
 }
 
+interface ReportDocument {
+  docType: DocType
+  signedUrl: string
+  isImage: boolean
+}
+
 interface BGVReportProps {
   employee: Employee
   verifications: ReportVerification[]
+  documents: ReportDocument[]
   verifiedBy: string
   verdict: 'CLEAR' | 'DISCREPANCY FOUND'
   generatedAt: string
 }
 
-export function BGVReport({ employee, verifications, verifiedBy, verdict, generatedAt }: BGVReportProps) {
+export function BGVReport({ employee, verifications, documents, verifiedBy, verdict, generatedAt }: BGVReportProps) {
   const isClear = verdict === 'CLEAR'
 
   const formatDt = (iso: string) =>
@@ -126,6 +137,29 @@ export function BGVReport({ employee, verifications, verifiedBy, verdict, genera
                   {v.status.charAt(0).toUpperCase() + v.status.replace(/_/g, ' ').slice(1)}
                 </Text>
                 <Text style={[styles.colNotes, { color: '#475569' }]}>{v.notes || '—'}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Document Images */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Submitted Documents</Text>
+          <View style={styles.docRow}>
+            {documents.map(doc => (
+              <View key={doc.docType} style={styles.docCard}>
+                <Text style={{ fontSize: 8, color: '#063840', fontFamily: 'Helvetica-Bold', marginBottom: 4, textAlign: 'center' }}>
+                  {DOC_TYPE_LABELS[doc.docType]}
+                </Text>
+                {doc.isImage ? (
+                  <Image src={doc.signedUrl} style={styles.docImage} />
+                ) : (
+                  <View style={{ height: 140, backgroundColor: '#f8fafc', borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
+                    <Text style={{ fontSize: 8, color: '#64748b' }}>PDF</Text>
+                    <Text style={{ fontSize: 7, color: '#94a3b8', marginTop: 2 }}>View via link below</Text>
+                  </View>
+                )}
+                <Link src={doc.signedUrl} style={styles.docLink}>View Document</Link>
               </View>
             ))}
           </View>

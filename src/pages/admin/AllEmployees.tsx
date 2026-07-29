@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Users } from 'lucide-react'
+import { Search, Users, ClipboardCheck } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
@@ -34,6 +36,7 @@ const STATUS_STYLES: Record<EmployeeStatus, string> = {
 
 export default function AllEmployees() {
   const [search, setSearch] = useState('')
+  const navigate = useNavigate()
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ['admin-all-employees'],
@@ -106,6 +109,7 @@ export default function AllEmployees() {
                   <TableHead>HR Contact</TableHead>
                   <TableHead>Registered</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -128,11 +132,23 @@ export default function AllEmployees() {
                         {STATUS_LABELS[emp.status]}
                       </span>
                     </TableCell>
+                    <TableCell className="text-right">
+                      {(emp.status === 'docs_submitted' || emp.status === 'under_review') && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/bgv/review/${emp.id}`)}
+                        >
+                          <ClipboardCheck className="w-4 h-4 mr-1" />
+                          Review
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                       No employees found
                     </TableCell>
                   </TableRow>

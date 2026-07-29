@@ -15,7 +15,7 @@ import { StatusBadge } from '@/components/dashboard/StatusBadge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 import { DOC_TYPE_LABELS, ALL_DOC_TYPES } from '@/lib/types'
-import type { Employee, Verification, EmployeeDocument, VerificationStatus } from '@/lib/types'
+import type { Employee, Verification, EmployeeDocument, VerificationStatus, DocType } from '@/lib/types'
 import { BGVReport } from './BGVReport'
 
 interface ReviewData {
@@ -32,6 +32,7 @@ export default function EmployeeReview() {
 
   const [localVerifs, setLocalVerifs] = useState<Record<string, { status: VerificationStatus; notes: string }>>({})
   const [generatingReport, setGeneratingReport] = useState(false)
+  const [docSignedUrls, setDocSignedUrls] = useState<Record<string, string>>({})
 
   const { data, isLoading } = useQuery<ReviewData>({
     queryKey: ['bgv-review', id],
@@ -59,6 +60,22 @@ export default function EmployeeReview() {
     })
     setLocalVerifs(init)
   }, [data?.verifications])
+
+  // Fetch signed URLs for document previews
+  useEffect(() => {
+    if (!data?.documents?.length) return
+    let cancelled = false
+    ;(async () => {
+      const entries = await Promise.all(
+        data.documents.map(async d => {
+          const url = await getSignedUrl('employee-docs', d.file_path, 86400)
+          return [d.doc_type, url ?? ''] as [string, string]
+        })
+      )
+      if (!cancelled) setDocSignedUrls(Object.fromEntries(entries))
+    })()
+    return () => { cancelled = true }
+  }, [data?.documents])
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -97,10 +114,21 @@ export default function EmployeeReview() {
 
       const verdict = allVerifs.every(v => v.status === 'verified') ? 'CLEAR' as const : 'DISCREPANCY FOUND' as const
 
+      const docUrlPromises = data.documents.map(async d => {
+        const url = await getSignedUrl('employee-docs', d.file_path, 604800)
+        return {
+          docType: d.doc_type as DocType,
+          signedUrl: url || '',
+          isImage: /\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(d.file_path),
+        }
+      })
+      const documents = (await Promise.all(docUrlPromises)).filter(d => d.signedUrl)
+
       const blob = await pdf(
         <BGVReport
           employee={data.employee}
           verifications={allVerifs}
+          documents={documents}
           verifiedBy={profile.full_name}
           verdict={verdict}
           generatedAt={new Date().toISOString()}
@@ -256,21 +284,40 @@ export default function EmployeeReview() {
                 <div key={docType} className="p-4 rounded-lg border border-border bg-muted/20">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-medium text-foreground">{DOC_TYPE_LABELS[docType]}</h3>
-                    {doc ? (
-                      <button
-                        className="flex items-center gap-1.5 text-xs text-[#063840] hover:underline"
-                        onClick={async () => {
-                          const url = await getSignedUrl('employee-docs', doc.file_path)
-                          if (url) window.open(url, '_blank')
-                        }}
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        View Document
-                      </button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">No document uploaded</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {doc && (
+                        <button
+                          className="flex items-center gap-1.5 text-xs text-[#063840] hover:underline"
+                          onClick={async () => {
+                            const url = await getSignedUrl('employee-docs', doc.file_path)
+                            if (url) window.open(url, '_blank')
+                          }}
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Open
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {doc && docSignedUrls[doc.doc_type] ? (
+                    <div className="mb-3 rounded-lg overflow-hidden border border-border bg-white">
+                      {/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(doc.file_path) ? (
+                        <img
+                          src={docSignedUrls[doc.doc_type]}
+                          alt={DOC_TYPE_LABELS[doc.doc_type]}
+                          className="w-full max-h-64 object-contain"
+                        />
+                      ) : (
+                        <iframe
+                          src={docSignedUrls[doc.doc_type]}
+                          className="w-full h-64"
+                          title={DOC_TYPE_LABELS[doc.doc_type]}
+                        />
+                      )}
+                    </div>
+                  ) : !doc ? (
+                    <span className="text-xs text-muted-foreground italic mb-3 block">No document uploaded</span>
+                  ) : null}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Status</div>

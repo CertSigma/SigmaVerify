@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Download, ExternalLink, Mail, Phone, Calendar } from 'lucide-react'
@@ -15,6 +16,7 @@ import type { Employee, Verification, EmployeeDocument, Report } from '@/lib/typ
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const [docSignedUrls, setDocSignedUrls] = useState<Record<string, string>>({})
 
   const { data, isLoading } = useQuery({
     queryKey: ['employee-detail', id],
@@ -52,6 +54,21 @@ export default function EmployeeDetail() {
       (data.verifications.filter(v => v.status === 'verified' || v.status === 'failed').length / 5) * 100
     )
     : 0
+
+  useEffect(() => {
+    if (!data?.documents?.length) return
+    let cancelled = false
+    ;(async () => {
+      const entries = await Promise.all(
+        data.documents.map(async d => {
+          const url = await getSignedUrl('employee-docs', d.file_path, 86400)
+          return [d.doc_type, url ?? ''] as [string, string]
+        })
+      )
+      if (!cancelled) setDocSignedUrls(Object.fromEntries(entries))
+    })()
+    return () => { cancelled = true }
+  }, [data?.documents])
 
   if (isLoading) {
     return (
@@ -154,34 +171,62 @@ export default function EmployeeDetail() {
             <CardTitle>Verification Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {ALL_DOC_TYPES.map(docType => {
-                const verif = verifications?.find(v => v.doc_type === docType)
-                const doc = documents?.find(d => d.doc_type === docType)
+                <div className="space-y-3">
+                  {ALL_DOC_TYPES.map(docType => {
+                    const verif = verifications?.find(v => v.doc_type === docType)
+                    const doc = documents?.find(d => d.doc_type === docType)
 
-                return (
-                  <div key={docType} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-foreground">{DOC_TYPE_LABELS[docType]}</div>
-                      {verif?.notes && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{verif.notes}</div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {doc && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDownload(doc.file_path, DOC_TYPE_LABELS[docType])}
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Button>
-                      )}
-                      <VerificationBadge status={verif?.status ?? 'pending'} />
-                    </div>
-                  </div>
-                )
-              })}
+                    return (
+                      <div key={docType} className="p-3 rounded-lg bg-muted/30 border border-border">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-foreground">{DOC_TYPE_LABELS[docType]}</div>
+                            {verif?.notes && (
+                              <div className="text-xs text-muted-foreground mt-0.5">{verif.notes}</div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {doc && docSignedUrls[doc.doc_type] && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(docSignedUrls[doc.doc_type], '_blank')}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDownload(doc.file_path, DOC_TYPE_LABELS[docType])}
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
+                            <VerificationBadge status={verif?.status ?? 'pending'} />
+                          </div>
+                        </div>
+                        {doc && docSignedUrls[doc.doc_type] && (
+                          <div className="mt-3 rounded-lg overflow-hidden border border-border bg-white">
+                            {/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(doc.file_path) ? (
+                              <img
+                                src={docSignedUrls[doc.doc_type]}
+                                alt={DOC_TYPE_LABELS[doc.doc_type]}
+                                className="w-full max-h-64 object-contain"
+                              />
+                            ) : (
+                              <iframe
+                                src={docSignedUrls[doc.doc_type]}
+                                className="w-full h-64"
+                                title={DOC_TYPE_LABELS[doc.doc_type]}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
             </div>
           </CardContent>
         </Card>
