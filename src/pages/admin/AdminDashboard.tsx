@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Building2, Users, ClipboardCheck, TrendingUp } from 'lucide-react'
+import { Building2, Users, ClipboardCheck, FileText, TrendingUp, Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { StatsCard } from '@/components/dashboard/StatsCard'
@@ -8,7 +8,7 @@ import { formatDate } from '@/lib/utils'
 import type { Profile } from '@/lib/types'
 
 export default function AdminDashboard() {
-  const { data: profiles = [], isLoading } = useQuery({
+  const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async (): Promise<Profile[]> => {
       const { data, error } = await supabase.from('profiles').select('*').eq('role', 'hr').order('created_at', { ascending: false })
@@ -17,25 +17,21 @@ export default function AdminDashboard() {
     },
   })
 
-  const { data: employeeCount = 0 } = useQuery({
-    queryKey: ['admin-employee-count'],
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['admin-dashboard-stats'],
     queryFn: async () => {
-      const { count } = await supabase.from('employees').select('*', { count: 'exact', head: true })
-      return count ?? 0
-    },
-  })
-
-  const { data: monthlyBgvCount = 0 } = useQuery({
-    queryKey: ['admin-monthly-bgv'],
-    queryFn: async () => {
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
-      const { count } = await supabase
-        .from('employees')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', startOfMonth.toISOString())
-      return count ?? 0
+      const [completedRes, reportsRes, progressRes, invitedRes] = await Promise.all([
+        supabase.from('employees').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+        supabase.from('reports').select('*', { count: 'exact', head: true }).not('report_url', 'is', null),
+        supabase.from('employees').select('*', { count: 'exact', head: true }).in('status', ['docs_submitted', 'under_review']),
+        supabase.from('employees').select('*', { count: 'exact', head: true }).eq('status', 'invited'),
+      ])
+      return {
+        completed: completedRes.count ?? 0,
+        reports: reportsRes.count ?? 0,
+        inProgress: progressRes.count ?? 0,
+        invited: invitedRes.count ?? 0,
+      }
     },
   })
 
@@ -43,13 +39,15 @@ export default function AdminDashboard() {
   const activeOrgs = profiles.filter(p => p.subscription_status === 'active').length
 
   return (
-    <PageWrapper title="Admin Dashboard">
+    <PageWrapper title="Dashboard">
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard title="Total Orgs" value={totalOrgs} icon={Building2} color="teal" loading={isLoading} />
-          <StatsCard title="Active Orgs" value={activeOrgs} icon={Users} color="green" loading={isLoading} />
-          <StatsCard title="Total Employees" value={employeeCount} icon={ClipboardCheck} color="blue" />
-          <StatsCard title="BGVs This Month" value={monthlyBgvCount} icon={TrendingUp} color="purple" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <StatsCard title="Organizations" value={totalOrgs} icon={Building2} color="teal" loading={profilesLoading} />
+          <StatsCard title="Active Orgs" value={activeOrgs} icon={Users} color="green" loading={profilesLoading} />
+          <StatsCard title="BGVs Completed" value={stats?.completed ?? 0} icon={ClipboardCheck} color="green" loading={statsLoading} />
+          <StatsCard title="Total Reports" value={stats?.reports ?? 0} icon={FileText} color="purple" loading={statsLoading} />
+          <StatsCard title="BGVs in Progress" value={stats?.inProgress ?? 0} icon={TrendingUp} color="blue" loading={statsLoading} />
+          <StatsCard title="Initiated" value={stats?.invited ?? 0} icon={Send} color="yellow" loading={statsLoading} />
         </div>
 
         {/* Recent registrations */}
@@ -74,7 +72,7 @@ export default function AdminDashboard() {
                   </span>
                 </div>
               ))}
-              {!isLoading && profiles.length === 0 && (
+              {!profilesLoading && profiles.length === 0 && (
                 <div className="py-8 text-center text-muted-foreground text-sm">No HR users registered yet</div>
               )}
             </div>

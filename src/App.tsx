@@ -19,6 +19,7 @@ const UserManagement = lazy(() => import('./pages/admin/UserManagement'))
 const Organizations = lazy(() => import('./pages/admin/Organizations'))
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
 const AllEmployees = lazy(() => import('./pages/admin/AllEmployees'))
+const OrgEmployees = lazy(() => import('./pages/admin/OrgEmployees'))
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,6 +128,7 @@ function AppRoutes() {
         {/* Admin routes */}
         <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/orgs" element={<ProtectedRoute roles={['admin']}><Organizations /></ProtectedRoute>} />
+        <Route path="/admin/orgs/:hrId" element={<ProtectedRoute roles={['admin']}><OrgEmployees /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><UserManagement /></ProtectedRoute>} />
         <Route path="/admin/reports" element={<ProtectedRoute roles={['admin']}><ReportsPage /></ProtectedRoute>} />
         <Route path="/admin/employees" element={<ProtectedRoute roles={['admin']}><AllEmployees /></ProtectedRoute>} />

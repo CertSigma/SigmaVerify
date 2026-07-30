@@ -1,20 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Users, ClipboardCheck, FileText } from 'lucide-react'
+import { ArrowLeft, Users, FileText } from 'lucide-react'
 import { supabase, getSignedUrl } from '@/lib/supabase'
 import { PageWrapper } from '@/components/layout/PageWrapper'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate } from '@/lib/utils'
 import type { Employee, EmployeeStatus } from '@/lib/types'
-
-interface EmployeeWithCompany extends Employee {
-  company_name: string | null
-  hr_name: string | null
-}
 
 const PROGRESS_LABELS: Record<EmployeeStatus, string> = {
   pending_initiation: 'Pending Initiation',
@@ -34,47 +28,39 @@ const PROGRESS_STYLES: Record<EmployeeStatus, string> = {
   failed: 'bg-red-100 text-red-800',
 }
 
-export default function AllEmployees() {
-  const [search, setSearch] = useState('')
-  const [reportUrls, setReportUrls] = useState<Record<string, string>>({})
+export default function OrgEmployees() {
+  const { hrId } = useParams<{ hrId: string }>()
   const navigate = useNavigate()
+  const [reportUrls, setReportUrls] = useState<Record<string, string>>({})
+
+  const { data: org } = useQuery({
+    queryKey: ['org-profile', hrId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', hrId!).single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!hrId,
+  })
 
   const { data: employees = [], isLoading } = useQuery({
-    queryKey: ['admin-all-employees'],
-    queryFn: async (): Promise<EmployeeWithCompany[]> => {
-      const { data: empData, error: empError } = await supabase
+    queryKey: ['org-employees', hrId],
+    queryFn: async (): Promise<Employee[]> => {
+      const { data, error } = await supabase
         .from('employees')
         .select('*')
+        .eq('hr_id', hrId!)
         .order('created_at', { ascending: false })
-      if (empError) throw empError
-
-      const hrIds = [...new Set((empData ?? []).map(e => e.hr_id))]
-      const profMap = new Map<string, { company_name: string | null; full_name: string }>()
-
-      if (hrIds.length > 0) {
-        const { data: profiles, error: profError } = await supabase
-          .from('profiles')
-          .select('id, company_name, full_name')
-          .in('id', hrIds)
-        if (profError) throw profError
-        for (const p of profiles ?? []) profMap.set(p.id, p)
-      }
-
-      return (empData ?? []).map(e => {
-        const prof = profMap.get(e.hr_id)
-        return {
-          ...e,
-          company_name: prof?.company_name ?? null,
-          hr_name: prof?.full_name ?? null,
-        }
-      })
+      if (error) throw error
+      return data ?? []
     },
+    enabled: !!hrId,
   })
 
   const completedIds = employees.filter(e => e.status === 'completed' || e.status === 'failed').map(e => e.id)
 
   const { data: reports = [] } = useQuery({
-    queryKey: ['admin-all-employees-reports'],
+    queryKey: ['org-employee-reports', hrId],
     queryFn: async () => {
       if (completedIds.length === 0) return []
       const { data, error } = await supabase
@@ -105,33 +91,35 @@ export default function AllEmployees() {
       if (!cancelled) setReportUrls(Object.fromEntries(entries.filter(([k]) => k)))
     })()
     return () => { cancelled = true }
-  }, [completedIds.length, reportMap.size])
-
-  const filtered = employees.filter(e =>
-    e.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    e.email.toLowerCase().includes(search.toLowerCase()) ||
-    (e.company_name ?? '').toLowerCase().includes(search.toLowerCase())
-  )
+  })
 
   return (
-    <PageWrapper title="All Employees">
+    <PageWrapper title={org?.company_name ?? 'Organization'}>
       <div className="space-y-6">
+        <button
+          onClick={() => navigate('/admin/orgs')}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Organizations
+        </button>
+
         <div className="bg-white rounded-xl border border-border">
-          <div className="flex items-center justify-between gap-4 p-5 border-b border-border">
-            <h2 className="font-semibold text-foreground">All Employees</h2>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">{employees.length} employee{employees.length !== 1 ? 's' : ''}</span>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name, email, company..."
-                  value={search}
-                  onChange={e => setSearch(e.target.value)}
-                  className="pl-9 h-9"
-                />
+          {org && (
+            <div className="p-5 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-[#063840]/10 rounded-xl flex items-center justify-center">
+                  <span className="text-[#063840] text-lg font-bold">{org.company_name?.charAt(0) ?? '?'}</span>
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">{org.company_name}</h2>
+                  <p className="text-sm text-muted-foreground">
+                    {org.full_name} · {employees.length} employee{employees.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {isLoading ? (
             <div className="p-5 space-y-3">
@@ -142,15 +130,16 @@ export default function AllEmployees() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Employee</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>HR Contact</TableHead>
-                  <TableHead>Registered</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Phone</TableHead>
                   <TableHead>Progress</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>Submitted</TableHead>
+                  <TableHead>Completed</TableHead>
+                  <TableHead className="text-right">Report</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(emp => {
+                {employees.map(emp => {
                   const isFinal = emp.status === 'completed' || emp.status === 'failed'
                   const reportUrl = reportUrls[emp.id]
                   return (
@@ -158,31 +147,23 @@ export default function AllEmployees() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-muted-foreground shrink-0" />
-                        <div>
-                          <div className="font-medium text-sm">{emp.full_name}</div>
-                          <div className="text-xs text-muted-foreground">{emp.email}</div>
-                        </div>
+                        <span className="font-medium text-sm">{emp.full_name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{emp.company_name ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{emp.hr_name ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{formatDate(emp.created_at)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{emp.email}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">{emp.phone ?? '—'}</TableCell>
                     <TableCell>
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${PROGRESS_STYLES[emp.status]}`}>
                         {PROGRESS_LABELS[emp.status]}
                       </span>
                     </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {emp.submitted_at ? formatDate(emp.submitted_at) : '—'}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {emp.completed_at ? formatDate(emp.completed_at) : '—'}
+                    </TableCell>
                     <TableCell className="text-right">
-                      {(emp.status === 'docs_submitted' || emp.status === 'under_review') && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/bgv/review/${emp.id}`)}
-                        >
-                          <ClipboardCheck className="w-4 h-4 mr-1" />
-                          Review
-                        </Button>
-                      )}
                       {isFinal && reportUrl && (
                         <Button
                           variant="ghost"
@@ -197,10 +178,10 @@ export default function AllEmployees() {
                   </TableRow>
                   )
                 })}
-                {filtered.length === 0 && (
+                {employees.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      No employees found
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No employees found for this organization
                     </TableCell>
                   </TableRow>
                 )}

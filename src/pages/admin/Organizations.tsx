@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Search, Building2, Users, CheckCircle2, Ban } from 'lucide-react'
@@ -21,6 +22,7 @@ interface OrgProfile extends Profile {
 
 export default function Organizations() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
 
   const { data: orgs = [], isLoading } = useQuery({
@@ -107,7 +109,12 @@ export default function Organizations() {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-muted-foreground shrink-0" />
-                        <span className="font-medium">{org.company_name ?? '—'}</span>
+                        <button
+                          onClick={() => navigate(`/admin/orgs/${org.id}`)}
+                          className="font-medium text-[#063840] hover:underline text-left"
+                        >
+                          {org.company_name ?? '—'}
+                        </button>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">{org.full_name}</TableCell>

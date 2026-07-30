@@ -16,9 +16,11 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { formatDate } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 import type { Profile, SubscriptionStatus, UserRole } from '@/lib/types'
 
 export default function UserManagement() {
+  const { profile: currentProfile } = useAuth()
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
@@ -67,6 +69,18 @@ export default function UserManagement() {
     onError: () => toast.error('Failed to update user'),
   })
 
+  const updateRole = useMutation({
+    mutationFn: async ({ id, role }: { id: string; role: UserRole }) => {
+      const { error } = await supabase.from('profiles').update({ role }).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast.success('Role updated')
+      queryClient.invalidateQueries({ queryKey: ['admin-all-profiles'] })
+    },
+    onError: () => toast.error('Failed to update role'),
+  })
+
   const deleteUser = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.rpc('admin_delete_user', { target_user_id: id })
@@ -109,8 +123,10 @@ export default function UserManagement() {
   })
 
   const filtered = profiles.filter(p =>
-    p.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    (p.company_name ?? '').toLowerCase().includes(search.toLowerCase())
+    p.id !== currentProfile?.id && (
+      p.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.company_name ?? '').toLowerCase().includes(search.toLowerCase())
+    )
   )
 
   return (
@@ -137,33 +153,49 @@ export default function UserManagement() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Registered</TableHead>
-                  <TableHead>Seats</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Registered</TableHead>
+                    <TableHead>Seats</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {filtered.map(profile => (
-                  <TableRow key={profile.id}>
-                    <TableCell className="font-medium">{profile.full_name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{profile.company_name ?? '—'}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">{formatDate(profile.created_at)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {profile.bgv_seats_used ?? 0} / {profile.bgv_seats_total ?? 0}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        profile.subscription_status === 'active' ? 'bg-green-100 text-green-800'
-                        : profile.subscription_status === 'suspended' ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {profile.subscription_status}
-                      </span>
-                    </TableCell>
+                    <TableRow key={profile.id}>
+                      <TableCell className="font-medium">{profile.full_name}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{profile.company_name ?? '—'}</TableCell>
+                      <TableCell>
+                        <Select
+                          value={profile.role}
+                          onValueChange={(val: UserRole) => updateRole.mutate({ id: profile.id, role: val })}
+                        >
+                          <SelectTrigger className="h-8 w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="hr">HR</SelectItem>
+                            <SelectItem value="bgv_team">BGV Team</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">{formatDate(profile.created_at)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {profile.bgv_seats_used ?? 0} / {profile.bgv_seats_total ?? 0}
+                      </TableCell>
+                      <TableCell>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          profile.subscription_status === 'active' ? 'bg-green-100 text-green-800'
+                          : profile.subscription_status === 'suspended' ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {profile.subscription_status}
+                        </span>
+                      </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
                         {profile.subscription_status === 'pending' && (
@@ -283,7 +315,7 @@ export default function UserManagement() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No users found
                     </TableCell>
                   </TableRow>

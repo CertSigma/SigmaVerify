@@ -66,7 +66,7 @@ export default function Dashboard() {
         employeeName: employee.full_name,
         companyName: profile?.company_name ?? 'Your Company',
         inviteToken: employee.invite_token,
-        appUrl: import.meta.env.VITE_APP_URL ?? window.location.origin,
+        appUrl: window.location.origin,
       })
       await supabase.from('employees').update({ invite_sent_at: new Date().toISOString() }).eq('id', employee.id)
     },
@@ -105,7 +105,7 @@ export default function Dashboard() {
         employeeName: employee.full_name,
         companyName: profile?.company_name ?? 'Your Company',
         inviteToken: employee.invite_token,
-        appUrl: import.meta.env.VITE_APP_URL ?? window.location.origin,
+        appUrl: window.location.origin,
       })
 
       // 4. Update status
